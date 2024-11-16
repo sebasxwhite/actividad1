@@ -1,34 +1,66 @@
-// const express = require('express')
-// const app = express()
+const http = require('http');
+const fs = require('fs');
+const PORT = 4000;
 
-// // respond with "hello world" when a GET request is made to the homepage
-// app.get('/', (req, res) => {
-//   res.send('hello world')
+const server = http.createServer((req, res) => {
+    if (req.url === "/" && req.method === 'GET') {
+        fs.readFile('formulario.html', (err, data) => {
+            if (err) {
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end("Error 500: Interno del Servidor");
+            } else {
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(data);
+            }
+        });
+    } else if (req.url === '/submit' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
 
-const express = require('express');
-const path = require('path');
+        req.on('end', () => {
+            const params = new URLSearchParams(body);
 
-const app = express(); //crear una instancia de la aplicacion express
+            // Asegúrate de que los valores existan antes de utilizarlos
+            const nombre = params.get('nombre') || 'No proporcionado';
+            const edad = params.get('edad') || 'No proporcionada';
+            const email = params.get('email') || 'No proporcionado';
+            const cursos = params.get('cursos') || 'No proporcionado';
 
-const PORT = 3000;
+            console.log(`
+            === Datos Recibidos ===
+            Nombre: ${nombre}
+            Edad: ${edad}
+            Correo Electrónico: ${email}
+            Curso: ${cursos}
+            `);
+    
+            // Respuesta al cliente
+            const respuesta = `
+            ✅ ¡Formulario enviado correctamente!
+            
+            📋 Datos Recibidos:
+            - Nombre: ${nombre}
+            - Edad: ${edad}
+            - Correo Electrónico: ${email}
+            - Curso: ${cursos}
+            `;
 
-//configurar Express para que procese los datos del formulario en formato URL
-app.use(express.urlencoded({ extended : true})); // middleware que permite a express entender datos enviados- 
+            console.log(`Nombre: ${nombre}`);
+            console.log(`Edad: ${edad}`);
+            console.log(`Correo Electrónico: ${email}`);
+            console.log(`Curso: ${cursos}`);
 
-//definir la ruta para servir el archivo html
-app.get('/',(req,res) => {
-    //envia el archivo formulario.html al cliente
-    res.sendFile(path.join(__dirname, 'formulario.html'))//
+            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+            res.end(respuesta);
+        });
+    } else {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end("Error 404: Not Found");
+    }
 });
 
-//define la ruta para procesar el envio del formulario
-app.post('/submit', (req, res) => {
-    //accede a los datos enviados en el formulario
-    const datosFormulario = req.body;
-    console.log("datos recibidos ",datosFormulario);
-    res.end("formulario enviado correctamente");
-});
-
-app.listen(PORT, () => {
-    console.log(`servidor funcionando en http://localhost:${PORT}`);
+server.listen(PORT, () => {
+    console.log(`Servidor en ejecución en http://localhost:${PORT}`);
 });
